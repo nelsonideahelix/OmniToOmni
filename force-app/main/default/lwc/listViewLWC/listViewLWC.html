@@ -1,0 +1,81 @@
+<template>
+    <lightning-card title="OmniScript List View">
+        <div class="slds-grid slds-gutters">
+            <div class="slds-col">
+                <!--<label class="slds-form-element__label" for="filterDropdown">Filter by Active Status</label>-->
+                <lightning-combobox
+                    id="filterDropdown"
+                    label="Filter by Active Status"
+                    value={activeFilter}
+                    options={filterOptions}
+                    onchange={handleFilterChange}
+                    class="slds-size_small">
+                </lightning-combobox>
+            </div>
+
+            <div class="slds-col slds-col_bump-left slds-text-align_right">
+                <button onclick={handleDeactivateClick} class="slds-button slds-button_neutral" disabled={isDeactivateButtonDisabled}>Deactivate</button>
+                <button onclick={handleActivateClick} class="slds-button slds-button_brand" disabled={isActivateButtonDisabled}>Activate</button>
+            </div>
+        </div>
+        
+        <template if:true={omniScripts}>
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Active</th>
+                        <th>Is Web Component Enabled</th>
+                        <th>Version</th>
+                        <!-- Agrega más encabezados de columna según tus necesidades -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredOmniScripts} for:item="omniScript">
+                        <tr key={omniScript.Id}>
+                            <td><lightning-input type="checkbox" data-id={omniScript.Id} onchange={handleCheckboxChange}></lightning-input></td>
+                            <td data-label="Name" onclick={openmodal}>{omniScript.Name}</td>
+                            <td data-label="Type">{omniScript.Type}</td>
+                            <td data-label="Active"><lightning-input type="checkbox" disabled=true checked={omniScript.IsActive}></lightning-input></td>
+                            <td data-label="Is Web Component Enabled"><lightning-input type="checkbox" disabled=true checked={omniScript.IsWebCompEnabled}></lightning-input></td>
+                            <td data-label="Version">{omniScript.VersionNumber}</td>
+                            <!-- Agrega más celdas de datos según tus necesidades -->
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template if:false={omniScripts}>
+            No se encontraron OmniScripts.
+        </template>
+    </lightning-card>
+        <!-- Modal para mostrar Custom HTML y Custom JavaScript -->
+        <template if:true={showModal}>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+            <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+                 aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                            {modalTitle}
+                        </h2>
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close" onclick={closeModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="Close" variant="inverse"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <template if:true={showCustomHTML}>
+                            <lightning-textarea value={customHTML} class="slds-m-bottom_small"></lightning-textarea>
+                        </template>
+                        <template if:true={showCustomJS}>
+                            <lightning-textarea value={customJS} class="slds-m-bottom_small"></lightning-textarea>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+    
+</template>
