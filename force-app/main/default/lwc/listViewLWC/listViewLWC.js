@@ -30,6 +30,8 @@ export default class listViewLWC extends LightningElement {
     customJS = '';
     showCustomHTML = false;
     showCustomJS = false;
+    isDeactivateButtonDisabled = true;
+    isActivateButtonDisabled = true;
 
     filterOptions = [
         { label: 'All', value: FILTER_ALL },
@@ -41,9 +43,9 @@ export default class listViewLWC extends LightningElement {
 
     connectedCallback() {
         this.activeFilter = FILTER_ALL;
-        this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
-        this.isDeactivateButtonDisabled = true;
-        this.isActivateButtonDisabled = true;
+        //this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
+        //this.isDeactivateButtonDisabled = true;
+        //this.isActivateButtonDisabled = true;
     }
     //Apex para hacer refresh, no funciona.
     loadData() {
@@ -138,8 +140,9 @@ openmodal() {
 handleCheckboxChange(event) {
     // Obtén el ID y el estado de la casilla de verificación (activada o desactivada) de la fila seleccionada.
     const omniScriptId = event.target.dataset.id;
+    console.log(omniScriptId);
     const isChecked = event.target.checked;
-
+    console.log(isChecked);
     // Actualiza el estado de isSelected para la fila seleccionada en el arreglo filteredOmniScripts.
     this.filteredOmniScripts = this.filteredOmniScripts.map(script => {
         if (script.Id === omniScriptId) {
@@ -155,7 +158,9 @@ handleCheckboxChange(event) {
 
     // Habilita o deshabilita los botones "Deactivate" y "Activate" según el estado de las filas seleccionadas.
     this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
+    console.log(this.isDeactivateButtonDisabled);
     this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
+    //console.log(isActivateButtonDisabled);
 }
 
 
@@ -168,14 +173,19 @@ handleDeactivateClick() {
             .then(result => {
                 this.hideSpinner();
                 this.showToast('Success', 'OmniScripts Deactivated successfully', 'success');
-                this.refreshOmniScripts();
+                // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
             })
             .catch(error => {
                 this.hideSpinner();
+                console.error('Error deactivating OmniScripts: ', error);
                 this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
             });
+    } else {
+        // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+        this.showToast('Error', 'No OmniScripts selected for deactivation', 'error');
     }
 }
+
 
 handleActivateClick() {
     const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
