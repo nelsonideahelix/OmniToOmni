@@ -18,18 +18,14 @@ const columns = [
 ];
 
 
-export default class OmniProcessListView extends LightningElement {
+export default class listViewLWC extends LightningElement {
 
-    connectedCallback() {
-        this.activeFilter = FILTER_ALL;
-        this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
-    }
     omniScripts;
     groupedOmniscripts = [];
     activeFilter = FILTER_ALL;
 
     showModal = false;
-    modalTitle = '';
+    modalTitle = 'Modal';
     customHTML = '';
     customJS = '';
     showCustomHTML = false;
@@ -43,26 +39,35 @@ export default class OmniProcessListView extends LightningElement {
         { label: 'LWC Disabled', value: FILTER_LWCDISABLED }
     ];
 
+    connectedCallback() {
+        this.activeFilter = FILTER_ALL;
+        this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
+        
+    }
+    //Apex para hacer refresh, no funciona.
     loadData() {
         return refreshApex(this.omniScripts); // Actualiza los datos utilizando el @wire
     }
 
-    @wire(getOmniscripts)
-    wiredOmniscripts(result) {
-        this.omniScripts = result;
-        if (result.data) {
-            // Realizar acciones adicionales después de cargar los datos, si es necesario
-        }
-    }
+    // @wire(getOmniscripts)
+    // wiredOmniscripts(result) {
+    //     this.omniScripts = result;
+    //     if (result.data) {
+    //         // Realizar acciones adicionales después de cargar los datos, si es necesario
+    //     }
+    // }
     @wire(getOmniscripts)
     wiredOmniscripts({ error, data }) {
         if (data) {
-            this.omniScripts = data;
+            // Agregar la propiedad isSelected a cada registro y luego asignar los datos a omniScripts
+            this.omniScripts = data.map(record => ({ ...record, isSelected: false }));
             this.filterOmniScripts();
         } else if (error) {
-            // Manejar errores si es necesario
+            console.error(error);
         }
     }
+
+    
 
     columns = columns;
 
@@ -93,15 +98,8 @@ export default class OmniProcessListView extends LightningElement {
     handleRowSelection(event) {
         this.selectedRecords = event.detail.selectedRows;
     }
-    @wire(getOmniscripts)
-wiredOmniscripts({ error, data }) {
-    if (data) {
-        // Agregar la propiedad isSelected a cada registro y luego asignar los datos a omniScripts
-        this.omniScripts = data.map(record => ({ ...record, isSelected: false }));
-    } else if (error) {
-        console.error(error);
-    }
-}
+
+ 
 
 handleFilterChange(event) {
     this.activeFilter = event.detail.value;
@@ -140,18 +138,15 @@ openmodal() {
     this.showModal = true;
 }
 
-handleCheckboxChange(event) {
-    const omniScriptId = event.target.dataset.id;
-    const isChecked = event.target.checked;
-}
+
 
 handleCheckboxChange(event) {
-    const selectedRowId = event.target.dataset.id;
+    const omniScriptId = event.target.dataset.id;
     const isChecked = event.target.checked;
 
     // Actualiza el estado de isSelected para la fila seleccionada
     this.filteredOmniScripts = this.filteredOmniScripts.map(script => {
-        if (script.Id === selectedRowId) {
+        if (script.Id === omniScriptId) {
             script.isSelected = isChecked;
         }
         return script;
@@ -166,6 +161,7 @@ handleCheckboxChange(event) {
     this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
     this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
 }
+
 
 handleDeactivateClick() {
     const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
