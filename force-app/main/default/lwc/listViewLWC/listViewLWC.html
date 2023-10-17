@@ -36,7 +36,9 @@
                     <template for:each={filteredOmniScripts} for:item="omniScript">
                         <tr key={omniScript.Id}>
                             <td><lightning-input type="checkbox" data-id={omniScript.Id} onchange={handleCheckboxChange}></lightning-input></td>
-                            <td data-label="Name" onclick={openmodal}>{omniScript.Name}</td>
+                            <!--<td data-label="Name" onclick={openmodal}>{omniScript.Name}</td>-->
+                            <td data-label="Name" onclick={openmodal} style="color: #0070d2; text-decoration: underline; cursor: pointer;">{omniScript.Name}</td>
+
                             <td data-label="Type">{omniScript.Type}</td>
                             <td data-label="Active"><lightning-input type="checkbox" disabled=true checked={omniScript.IsActive}></lightning-input></td>
                             <td data-label="Is Web Component Enabled"><lightning-input type="checkbox" disabled=true checked={omniScript.IsWebCompEnabled}></lightning-input></td>

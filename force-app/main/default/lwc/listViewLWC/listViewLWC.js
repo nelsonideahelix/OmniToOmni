@@ -42,20 +42,15 @@ export default class listViewLWC extends LightningElement {
     connectedCallback() {
         this.activeFilter = FILTER_ALL;
         this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
-        
+        this.isDeactivateButtonDisabled = true;
+        this.isActivateButtonDisabled = true;
     }
     //Apex para hacer refresh, no funciona.
     loadData() {
         return refreshApex(this.omniScripts); // Actualiza los datos utilizando el @wire
     }
 
-    // @wire(getOmniscripts)
-    // wiredOmniscripts(result) {
-    //     this.omniScripts = result;
-    //     if (result.data) {
-    //         // Realizar acciones adicionales después de cargar los datos, si es necesario
-    //     }
-    // }
+   
     @wire(getOmniscripts)
     wiredOmniscripts({ error, data }) {
         if (data) {
@@ -141,10 +136,11 @@ openmodal() {
 
 
 handleCheckboxChange(event) {
+    // Obtén el ID y el estado de la casilla de verificación (activada o desactivada) de la fila seleccionada.
     const omniScriptId = event.target.dataset.id;
     const isChecked = event.target.checked;
 
-    // Actualiza el estado de isSelected para la fila seleccionada
+    // Actualiza el estado de isSelected para la fila seleccionada en el arreglo filteredOmniScripts.
     this.filteredOmniScripts = this.filteredOmniScripts.map(script => {
         if (script.Id === omniScriptId) {
             script.isSelected = isChecked;
@@ -152,15 +148,16 @@ handleCheckboxChange(event) {
         return script;
     });
 
-    // Verifica si al menos una fila está seleccionada y todas las seleccionadas tienen IsActive como true o false
+    // Verifica si al menos una fila está seleccionada y si todas las seleccionadas tienen IsActive como true o false.
     const allSelectedRows = this.filteredOmniScripts.filter(script => script.isSelected);
     const allActive = allSelectedRows.every(script => script.IsActive);
     const allInactive = allSelectedRows.every(script => !script.IsActive);
 
-    // Habilita o deshabilita los botones Deactivate y Activate según el estado de las filas seleccionadas
+    // Habilita o deshabilita los botones "Deactivate" y "Activate" según el estado de las filas seleccionadas.
     this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
     this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
 }
+
 
 
 handleDeactivateClick() {

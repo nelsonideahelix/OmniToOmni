@@ -1,6 +1,6 @@
 
 public with sharing class ChatGPTService {
-    private static final String API_KEY = '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'; // Replace with your actual API key.
+    private static final String API_KEY = 'APIKEY'; // Replace with your actual API key.
     private static final String ENDPOINT_URL = 'https://api.openai.com/v1/chat/completions';
 
     /**
@@ -16,7 +16,7 @@ public with sharing class ChatGPTService {
         req.setHeader('Authorization', 'Bearer ' + API_KEY); // Add the API key to the request header
 
         // Set the request body
-        String prompt = 'Transform the follow code into Lightning web component.\nUser: ' + messageText + '\nAssistant:';
+        String prompt = 'transform the following code to lightning web component.\nUser: ' + messageText + '\nAssistant:';
         System.debug(prompt); 
 
         Map<String, Object> PromptBody = new Map<String, Object>();
