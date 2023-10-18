@@ -1,6 +1,10 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track,api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOmniscripts from '@salesforce/apex/ListViewController.getOmniscripts';
+import  deactivateOmniScript  from '@salesforce/apex/ListViewController.deactivateOmniScript';
+import  activateOmniScript  from '@salesforce/apex/ListViewController.activateOmniScript';
+
 const FILTER_ALL = 'All';
 const FILTER_ACTIVE = 'Active';
 const FILTER_INACTIVE = 'Inactive';
@@ -20,10 +24,10 @@ const columns = [
 
 export default class listViewLWC extends LightningElement {
 
-    omniScripts;
-    groupedOmniscripts = [];
+    @track omniScripts;
+    @track groupedOmniscripts = [];
     activeFilter = FILTER_ALL;
-
+    
     showModal = false;
     modalTitle = 'Modal';
     customHTML = '';
@@ -43,10 +47,12 @@ export default class listViewLWC extends LightningElement {
 
     connectedCallback() {
         this.activeFilter = FILTER_ALL;
+        
         //this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
         //this.isDeactivateButtonDisabled = true;
         //this.isActivateButtonDisabled = true;
     }
+    
     //Apex para hacer refresh, no funciona.
     loadData() {
         return refreshApex(this.omniScripts); // Actualiza los datos utilizando el @wire
@@ -168,11 +174,13 @@ handleCheckboxChange(event) {
 handleDeactivateClick() {
     const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
     if (selectedOmniScriptIds.length > 0) {
-        this.showSpinner();
+        //this.showSpinner();
         deactivateOmniScript({ omniScriptIds: selectedOmniScriptIds })
             .then(result => {
-                this.hideSpinner();
+                //this.hideSpinner();
                 this.showToast('Success', 'OmniScripts Deactivated successfully', 'success');
+                this.refreshApex(this.wiredOmniscripts);
+                //location.reload();
                 // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
             })
             .catch(error => {
@@ -190,13 +198,23 @@ handleDeactivateClick() {
 handleActivateClick() {
     const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
     if (selectedOmniScriptIds.length > 0) {
+        //this.showSpinner();
         activateOmniScript({ omniScriptIds: selectedOmniScriptIds })
             .then(result => {
-                // Lógica para manejar la respuesta de la activación
+                //this.hideSpinner();
+                this.showToast('Success', 'OmniScripts Activated successfully', 'success');
+                this.refreshApex(this.wiredOmniscripts);
+                //location.reload();
+                // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
             })
             .catch(error => {
-                // Manejar errores si es necesario
+                this.hideSpinner();
+                console.error('Error deactivating OmniScripts: ', error);
+                this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
             });
+    } else {
+        // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+        this.showToast('Error', 'No OmniScripts selected for Activatation', 'error');
     }
 }
 
@@ -205,6 +223,13 @@ getSelectedOmniScriptIds() {
     return selectedOmniScripts.map(script => script.Id);
 }
 
-
+showToast(title, message, variant) {
+    const toastEvent = new ShowToastEvent({
+        title: title,
+        message: message,
+        variant: variant
+    });
+    this.dispatchEvent(toastEvent);
+}
 
 }

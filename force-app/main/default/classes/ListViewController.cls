@@ -4,7 +4,7 @@ public class ListViewController {
         
         List<OmniProcess> omniscripts = new List<OmniProcess>();
         try {
-            omniscripts = [SELECT Name, Type, SubType, Language, IsIntegrationProcedure, IsOmniScriptEmbeddable, 
+            omniscripts = [SELECT Id,Name, Type, SubType, Language, IsIntegrationProcedure, IsOmniScriptEmbeddable, 
             IsWebCompEnabled, IsActive, VersionNumber, OmniProcessType ,CustomHtmlTemplates,CustomJavaScript
      FROM OmniProcess 
      WHERE OmniProcessType = 'Omniscript' 
