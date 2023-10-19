@@ -67,5 +67,45 @@ public class ListViewController {
             throw new AuraHandledException('Error al activar OmniScripts: ' + e.getMessage());
         }
     }
+
+    @AuraEnabled
+    public static void activateLWCOmniScript(List<Id> omniScriptIds) {
+        List<OmniProcess> omniScriptsToUpdate = new List<OmniProcess>();
+
+        // Recorrer los IDs y cargar los registros que se van a activar
+        for (Id omniScriptId : omniScriptIds) {
+            OmniProcess omniScript = new OmniProcess(Id = omniScriptId, IsWebCompEnabled = true);
+            omniScriptsToUpdate.add(omniScript);
+        }
+
+        // Actualizar los registros
+        try {
+            update omniScriptsToUpdate;
+        } catch (Exception e) {
+            // Manejar cualquier excepción que pueda ocurrir durante la actualización
+            System.debug('Error al activar OmniScripts: ' + e.getMessage());
+            throw new AuraHandledException('Error al activar OmniScripts: ' + e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static void deactivateLWCOmniScript(List<Id> omniScriptIds) {
+        List<OmniProcess> omniScriptsToUpdate = new List<OmniProcess>();
+
+        // Recorrer los IDs y cargar los registros que se van a activar
+        for (Id omniScriptId : omniScriptIds) {
+            OmniProcess omniScript = new OmniProcess(Id = omniScriptId, IsWebCompEnabled = false);
+            omniScriptsToUpdate.add(omniScript);
+        }
+
+        // Actualizar los registros
+        try {
+            update omniScriptsToUpdate;
+        } catch (Exception e) {
+            // Manejar cualquier excepción que pueda ocurrir durante la actualización
+            System.debug('Error al activar OmniScripts: ' + e.getMessage());
+            throw new AuraHandledException('Error al activar OmniScripts: ' + e.getMessage());
+        }
+    }
     
 }

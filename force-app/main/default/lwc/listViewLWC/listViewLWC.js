@@ -4,6 +4,8 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOmniscripts from '@salesforce/apex/ListViewController.getOmniscripts';
 import deactivateOmniScript from '@salesforce/apex/ListViewController.deactivateOmniScript';
 import activateOmniScript from '@salesforce/apex/ListViewController.activateOmniScript';
+import activateLWCOmniScript from '@salesforce/apex/ListViewController.activateLWCOmniScript';
+import deactivateLWCOmniScript from '@salesforce/apex/ListViewController.deactivateLWCOmniScript';
 
 const FILTER_ALL = 'All';
 const FILTER_ACTIVE = 'Active';
@@ -29,6 +31,7 @@ export default class listViewLWC extends LightningElement {
     @track groupedOmniscripts = [];
     @track showSpinner = true;
     activeFilter = FILTER_ALL;
+    @track selectAllCheckboxes = false;
 
     showModal = false;
     modalTitle = 'Modal';
@@ -38,6 +41,8 @@ export default class listViewLWC extends LightningElement {
     showCustomJS = false;
     isDeactivateButtonDisabled = true;
     isActivateButtonDisabled = true;
+    isLWCDeactivateButtonDisabled = true;
+    isLWCActivateButtonDisabled = true;
 
     filterOptions = [
         { label: 'All', value: FILTER_ALL },
@@ -179,11 +184,15 @@ export default class listViewLWC extends LightningElement {
         const allSelectedRows = this.filteredOmniScripts.filter(script => script.isSelected);
         const allActive = allSelectedRows.every(script => script.IsActive);
         const allInactive = allSelectedRows.every(script => !script.IsActive);
+        const allActiveLWC = allSelectedRows.every(script => script.IsWebCompEnabled);
+        const allInactiveLWC = allSelectedRows.every(script => !script.IsWebCompEnabled);
 
         // Habilita o deshabilita los botones "Deactivate" y "Activate" según el estado de las filas seleccionadas.
         this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
-        
         this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
+
+        this.isLWCDeactivateButtonDisabled = !allActiveLWC || allSelectedRows.length === 0;
+        this.isLWCActivateButtonDisabled = !allInactiveLWC || allSelectedRows.length === 0;
         //console.log(isActivateButtonDisabled);
     }
 
@@ -192,21 +201,17 @@ export default class listViewLWC extends LightningElement {
     handleDeactivateClick() {
         this.showSpinner = true;
         const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
-        console.log('nelson tru label :'+selectedOmniScriptIds);
-        console.log('before update: '+JSON.stringify(this.filteredOmniScripts));
+        //console.log('nelson tru label :'+selectedOmniScriptIds);
+        //console.log('before update: '+JSON.stringify(this.filteredOmniScripts));
+        this.selectAllCheckboxes = false;
         this.changeActiveStatus(selectedOmniScriptIds, false);
         if (selectedOmniScriptIds.length > 0) {
             deactivateOmniScript({ omniScriptIds: selectedOmniScriptIds })
                 .then(result => {
                     this.showToast('Success', 'OmniScripts Deactivated successfully', 'success');
-                    refreshApex(this.wiredOmniscripts);
-                    // windows.location.reload();
-                    // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
-                    //this.loadData();
-                    console.log('after update: '+JSON.stringify(this.filteredOmniScripts));
-                    
-                    this.filterOmniScripts();
-                    
+                    refreshApex(this.wiredOmniscripts);            
+                    //console.log('after update: '+JSON.stringify(this.filteredOmniScripts));
+                    this.filterOmniScripts();                 
                 })
                 .catch(error => {
                     console.error('Error deactivating OmniScripts: ', error);
@@ -218,6 +223,83 @@ export default class listViewLWC extends LightningElement {
             this.showToast('Error', 'No OmniScripts selected for deactivation', 'error');
         }
     }
+    
+
+    handleActivateClick() {
+        this.showSpinner = true;
+        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
+        this.changeActiveStatus(selectedOmniScriptIds, true);
+        if (selectedOmniScriptIds.length > 0) {
+            //console.log('before update: '+this.filteredOmniScripts);
+            activateOmniScript({ omniScriptIds: selectedOmniScriptIds })
+                .then(result => {
+                    this.showToast('Success', 'OmniScripts Activated successfully', 'success');
+                    refreshApex(this.wiredOmniscripts);
+                    //console.log('after update: '+this.filteredOmniScripts);                   
+                    this.filterOmniScripts();
+                })
+                .catch(error => {
+                    //console.error('Error deactivating OmniScripts: ', error);
+                    this.showToast('Error', 'Failed to Activate OmniScripts', 'error');
+                    this.showSpinner = false;
+                });
+        } else {
+            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+            this.showToast('Error', 'No OmniScripts selected for Deactivation', 'error');
+        }
+    }
+
+    handleActivateClickLWC(){
+        this.showSpinner = true;
+        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
+        //this.changeActiveStatusLWC(selectedOmniScriptIds, true);
+        if (selectedOmniScriptIds.length > 0) {
+            //console.log('before update: '+this.filteredOmniScripts);
+            activateLWCOmniScript({ omniScriptIds: selectedOmniScriptIds })
+                .then(result => {
+                    this.showToast('Success', 'OmniScripts LWC enabled Activated successfully', 'success');
+                    refreshApex(this.wiredOmniscripts);
+                    this.changeActiveStatusLWC(selectedOmniScriptIds, true);         
+                    this.filterOmniScripts();
+                })
+                .catch(error => {
+                    
+                    this.showToast('Error', 'Failed to Activate LWC in OmniScripts', 'error');
+                    this.showSpinner = false;
+                });
+        } else {
+            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+            this.showToast('Error', 'No OmniScripts selected for LWC Activatation', 'error');
+            this.showSpinner = false;
+        }
+
+    }
+
+    handleDeactivateLWC(){
+        this.showSpinner = true;
+        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
+        //this.changeActiveStatusLWC(selectedOmniScriptIds, true);
+        if (selectedOmniScriptIds.length > 0) {
+            //console.log('before update: '+this.filteredOmniScripts);
+            deactivateLWCOmniScript({ omniScriptIds: selectedOmniScriptIds })
+                .then(result => {
+                    this.showToast('Success', 'OmniScripts LWC Deactivated successfully', 'success');
+                    refreshApex(this.wiredOmniscripts);
+                    this.changeActiveStatusLWC(selectedOmniScriptIds, false);                   
+                    this.filterOmniScripts();
+                })
+                .catch(error => {
+                    
+                    this.showToast('Error', 'Failed to Activate LWC in OmniScripts', 'error');
+                    this.showSpinner = false;
+                });
+        } else {
+            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+            this.showToast('Error', 'No OmniScripts selected for LWC Deactivation', 'error');
+            this.showSpinner = false;
+        }
+    }
+
     changeActiveStatus(omnisId, newStatus){
         for (let i = 0; i < this.filteredOmniScripts.length; i++) {
             if (omnisId.includes(this.filteredOmniScripts[i].Id)) {
@@ -226,32 +308,11 @@ export default class listViewLWC extends LightningElement {
         }
     }
 
-    handleActivateClick() {
-        this.showSpinner = true;
-        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
-        this.changeActiveStatus(selectedOmniScriptIds, true);
-        if (selectedOmniScriptIds.length > 0) {
-            console.log('before update: '+this.filteredOmniScripts);
-            activateOmniScript({ omniScriptIds: selectedOmniScriptIds })
-                .then(result => {
-                    this.showToast('Success', 'OmniScripts Activated successfully', 'success');
-                    refreshApex(this.wiredOmniscripts);
-                    console.log('after update: '+this.filteredOmniScripts);
-                    // windows.location.reload();
-                    // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
-                    //this.loadData();
-                    
-                    this.filterOmniScripts();
-                    
-                })
-                .catch(error => {
-                    console.error('Error deactivating OmniScripts: ', error);
-                    this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
-                    this.showSpinner = false;
-                });
-        } else {
-            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
-            this.showToast('Error', 'No OmniScripts selected for Activatation', 'error');
+    changeActiveStatusLWC(omnisId, newStatus){
+        for (let i = 0; i < this.filteredOmniScripts.length; i++) {
+            if (omnisId.includes(this.filteredOmniScripts[i].Id)) {
+                this.filteredOmniScripts[i].IsWebCompEnabled = newStatus;
+            }
         }
     }
 

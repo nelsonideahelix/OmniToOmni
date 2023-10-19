@@ -15,6 +15,13 @@
                 <button onclick={handleActivateClick} class="slds-button slds-button_brand"
                     disabled={isActivateButtonDisabled}>Activate</button>
             </div>
+            <div class="slds-col slds-col_bump-left slds-text-align_right">
+                <button onclick={handleDeactivateLWC} class="slds-button slds-button_neutral"
+                    disabled={isLWCDeactivateButtonDisabled}>Disable LWC</button>
+
+                <button onclick={handleActivateClickLWC} class="slds-button slds-button_brand"
+                    disabled={isLWCActivateButtonDisabled}>Enable LWC</button>
+            </div>
         </div>
 
         <template if:true={showSpinner}>
@@ -49,7 +56,7 @@
                         <template for:each={filteredOmniScripts} for:item="omniScript">
                             <tr key={omniScript.Id}>
                                 <td><lightning-input type="checkbox" data-id={omniScript.Id}
-                                        onchange={handleCheckboxChange}></lightning-input></td>
+                                        onchange={handleCheckboxChange} checked={selectAllCheckboxes}></lightning-input></td>
                                 <!--<td data-label="Name" onclick={openmodal}>{omniScript.Name}</td>-->
                                 <td data-label="Name" onclick={handleNameClick} data-id={omniScript.Id}
                                     style="color: #0070d2; text-decoration: underline; cursor: pointer;">
@@ -89,10 +96,10 @@
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <!--<template if:true={showCustomHTML} >-->
                     
-                        <lightning-textarea value={customHTML} class="slds-m-bottom_small" style="height: 300px;"></lightning-textarea>
+                        <lightning-textarea value={customHTML} label="HTML code" title="HTML code" class="slds-m-bottom_small" style="height: 300px;"></lightning-textarea>
                     
                     <template if:true={showCustomJS} >
-                        <lightning-textarea value={customJS} class="slds-m-bottom_small" style="height: 300px;"></lightning-textarea>
+                        <lightning-textarea value={customJS} label="JavaScript code" title="JavaScript code" class="slds-m-bottom_small" style="height: 300px;"></lightning-textarea>
                     </template>
                 </div>
                 <div class="slds-modal__footer slds-clearfix">
@@ -102,7 +109,7 @@
                     </button>
                     <button class="slds-button slds-button_neutral slds-float_right slds-text-align_right slds-m-top_medium"
                         onclick={handleConversionHTML}>
-                        Convert HTML to LWC
+                        Convert LWC
                     </button>
                 </div>
             </div>
