@@ -17,7 +17,7 @@ export default class ChatGPTBot extends LightningElement {
             const userMessage = {
                 id: 'user-' + this.conversation.length,
                 role: 'user',
-                text: this.messageInput,
+                text: 'Convert the following code to Lightning web component HTML,includes all CSS styles within the components of thatLWC HTML and do not include any of the Javascript, send me the complete generated HTML:'+this.messageInput,
                 containerClass: 'slds-chat-message slds-chat-message_outbound user-message',
                 textClass: 'slds-chat-message__text slds-chat-message__text_outbound',
                 isBot : false

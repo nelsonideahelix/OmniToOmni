@@ -1,14 +1,14 @@
-import { LightningElement, wire, track,api } from 'lwc';
+import { LightningElement, wire, track, api } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOmniscripts from '@salesforce/apex/ListViewController.getOmniscripts';
-import  deactivateOmniScript  from '@salesforce/apex/ListViewController.deactivateOmniScript';
-import  activateOmniScript  from '@salesforce/apex/ListViewController.activateOmniScript';
+import deactivateOmniScript from '@salesforce/apex/ListViewController.deactivateOmniScript';
+import activateOmniScript from '@salesforce/apex/ListViewController.activateOmniScript';
 
 const FILTER_ALL = 'All';
 const FILTER_ACTIVE = 'Active';
 const FILTER_INACTIVE = 'Inactive';
-const FILTER_LWCENABLED ='LWC Enabled';
+const FILTER_LWCENABLED = 'LWC Enabled';
 const FILTER_LWCDISABLED = 'LWC Disabled';
 
 const columns = [
@@ -17,6 +17,7 @@ const columns = [
     { label: 'Type', fieldName: 'Type', type: 'text' },
     { label: 'Active', fieldName: 'IsActive', type: 'boolean', typeAttributes: { iconName: 'utility:check', class: 'slds-icon-text-success' } },
     { label: 'Is web component Enabled', fieldName: 'IsWebCompEnabled', type: 'boolean', typeAttributes: { iconName: 'utility:check', class: 'slds-icon-text-success' } },
+    { label: 'Custom HTML', fieldName: 'Custom HTML', type: 'boolean', typeAttributes: { iconName: 'utility:check', class: 'slds-icon-text-success' } },
     { label: 'Version', fieldName: 'VersionNumber', type: 'text' } // Agregar columna para VersionNumber
     // Agrega otros campos aquí según tus necesidades
 ];
@@ -26,8 +27,9 @@ export default class listViewLWC extends LightningElement {
 
     @track omniScripts;
     @track groupedOmniscripts = [];
+    @track showSpinner = true;
     activeFilter = FILTER_ALL;
-    
+
     showModal = false;
     modalTitle = 'Modal';
     customHTML = '';
@@ -47,18 +49,18 @@ export default class listViewLWC extends LightningElement {
 
     connectedCallback() {
         this.activeFilter = FILTER_ALL;
-        
+        //this.wiredOmniscripts();
         //this.loadData(); // Llama a la función para cargar los datos cuando el componente se inicia
         //this.isDeactivateButtonDisabled = true;
         //this.isActivateButtonDisabled = true;
     }
-    
+
     //Apex para hacer refresh, no funciona.
     loadData() {
         return refreshApex(this.omniScripts); // Actualiza los datos utilizando el @wire
     }
 
-   
+
     @wire(getOmniscripts)
     wiredOmniscripts({ error, data }) {
         if (data) {
@@ -67,10 +69,11 @@ export default class listViewLWC extends LightningElement {
             this.filterOmniScripts();
         } else if (error) {
             console.error(error);
+            this.showSpinner = false;
         }
     }
 
-    
+
 
     columns = columns;
 
@@ -102,134 +105,168 @@ export default class listViewLWC extends LightningElement {
         this.selectedRecords = event.detail.selectedRows;
     }
 
- 
 
-handleFilterChange(event) {
-    this.activeFilter = event.detail.value;
-    this.filterOmniScripts();
-}
 
-filterOmniScripts() {
-    if (this.activeFilter === FILTER_ALL) {
-        this.filteredOmniScripts = this.omniScripts;
-    } else {
-        this.filteredOmniScripts = this.omniScripts.filter(script => {
-            const isActiveFilter = this.activeFilter === FILTER_ACTIVE ? script.IsActive : this.activeFilter === FILTER_INACTIVE ? !script.IsActive : true;
-            const isLwcEnabledFilter = this.activeFilter === FILTER_LWCENABLED ? script.IsWebCompEnabled : this.activeFilter === FILTER_LWCDISABLED ? !script.IsWebCompEnabled : true;
-            return isActiveFilter && isLwcEnabledFilter;
-        });
+    handleFilterChange(event) {
+        this.activeFilter = event.detail.value;
+        this.filterOmniScripts();
     }
-}
 
-handleNameClick(event) {
-    const omniScriptId = event.currentTarget.dataset.id;
-    const omniScript = this.omniScripts.find(script => script.Id === omniScriptId);
-
-    this.modalTitle = omniScript.Name;
-    this.customHTML = omniScript.CustomHtmlTemplates;
-    this.customJS = omniScript.CustomJavaScript;
-    this.showCustomHTML = !!this.customHTML;
-    this.showCustomJS = !!this.customJS;
-    this.showModal = true;
-}
-
-closeModal() {
-    this.showModal = false;
-}
-
-openmodal() {
-    this.showModal = true;
-}
-
-
-
-handleCheckboxChange(event) {
-    // Obtén el ID y el estado de la casilla de verificación (activada o desactivada) de la fila seleccionada.
-    const omniScriptId = event.target.dataset.id;
-    console.log(omniScriptId);
-    const isChecked = event.target.checked;
-    console.log(isChecked);
-    // Actualiza el estado de isSelected para la fila seleccionada en el arreglo filteredOmniScripts.
-    this.filteredOmniScripts = this.filteredOmniScripts.map(script => {
-        if (script.Id === omniScriptId) {
-            script.isSelected = isChecked;
+    filterOmniScripts() {
+        if (this.activeFilter === FILTER_ALL) {
+            this.filteredOmniScripts = this.omniScripts;
+        } else {
+            this.filteredOmniScripts = this.omniScripts.filter(script => {
+                const isActiveFilter = this.activeFilter === FILTER_ACTIVE ? script.IsActive : this.activeFilter === FILTER_INACTIVE ? !script.IsActive : true;
+                const isLwcEnabledFilter = this.activeFilter === FILTER_LWCENABLED ? script.IsWebCompEnabled : this.activeFilter === FILTER_LWCDISABLED ? !script.IsWebCompEnabled : true;
+                return isActiveFilter && isLwcEnabledFilter;
+            });
         }
-        return script;
-    });
-
-    // Verifica si al menos una fila está seleccionada y si todas las seleccionadas tienen IsActive como true o false.
-    const allSelectedRows = this.filteredOmniScripts.filter(script => script.isSelected);
-    const allActive = allSelectedRows.every(script => script.IsActive);
-    const allInactive = allSelectedRows.every(script => !script.IsActive);
-
-    // Habilita o deshabilita los botones "Deactivate" y "Activate" según el estado de las filas seleccionadas.
-    this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
-    console.log(this.isDeactivateButtonDisabled);
-    this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
-    //console.log(isActivateButtonDisabled);
-}
-
-
-
-handleDeactivateClick() {
-    const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
-    if (selectedOmniScriptIds.length > 0) {
-        //this.showSpinner();
-        deactivateOmniScript({ omniScriptIds: selectedOmniScriptIds })
-            .then(result => {
-                //this.hideSpinner();
-                this.showToast('Success', 'OmniScripts Deactivated successfully', 'success');
-                this.refreshApex(this.wiredOmniscripts);
-                //location.reload();
-                // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
-            })
-            .catch(error => {
-                this.hideSpinner();
-                console.error('Error deactivating OmniScripts: ', error);
-                this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
-            });
-    } else {
-        // Manejar caso donde no se seleccionaron OmniScripts para desactivar
-        this.showToast('Error', 'No OmniScripts selected for deactivation', 'error');
+        this.showSpinner = false;
     }
-}
 
-
-handleActivateClick() {
-    const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
-    if (selectedOmniScriptIds.length > 0) {
-        //this.showSpinner();
-        activateOmniScript({ omniScriptIds: selectedOmniScriptIds })
-            .then(result => {
-                //this.hideSpinner();
-                this.showToast('Success', 'OmniScripts Activated successfully', 'success');
-                this.refreshApex(this.wiredOmniscripts);
-                //location.reload();
-                // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
-            })
-            .catch(error => {
-                this.hideSpinner();
-                console.error('Error deactivating OmniScripts: ', error);
-                this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
-            });
-    } else {
-        // Manejar caso donde no se seleccionaron OmniScripts para desactivar
-        this.showToast('Error', 'No OmniScripts selected for Activatation', 'error');
+    handleNameClick(event) {
+        console.log('INICIA');
+        this.showModal = true; 
+        const omniScriptId = event.currentTarget.dataset.id;
+        //const omniScriptId = '0jNHn000000PDueMAG';
+        console.log('omniScriptId:===>'+ omniScriptId);
+        const omniScript = this.omniScripts.find(script => script.Id === omniScriptId);
+    
+        console.log('OmniScript:', omniScript);
+    
+        
+            this.modalTitle = omniScript.Name;
+            this.customHTML = omniScript.CustomHtmlTemplates;
+            this.customJS = omniScript.CustomJavaScript;
+            console.log('this.customJS===>'+ this.customJS);
+            this.showCustomHTML = !!this.customHTML;
+                if(this.showCustomHTML == false){
+                    this.customHTML = 'There is no HTML to Show';
+                }
+           
+            this.showCustomJS = !!this.customJS;
+            console.log('modalTitle:', this.modalTitle);
+            console.log('customHTML:', this.customHTML);
+            console.log('customJS:', this.customJS);
+       
     }
-}
+   
 
-getSelectedOmniScriptIds() {
-    const selectedOmniScripts = this.filteredOmniScripts.filter(script => script.isSelected);
-    return selectedOmniScripts.map(script => script.Id);
-}
+    closeModal() {
+        this.showModal = false;
+    }
 
-showToast(title, message, variant) {
-    const toastEvent = new ShowToastEvent({
-        title: title,
-        message: message,
-        variant: variant
-    });
-    this.dispatchEvent(toastEvent);
-}
+    handleConversionHTML(event){}
+
+
+
+    handleCheckboxChange(event) {
+        // Obtén el ID y el estado de la casilla de verificación (activada o desactivada) de la fila seleccionada.
+        const omniScriptId = event.target.dataset.id;
+        console.log(omniScriptId);
+        const isChecked = event.target.checked;
+        console.log(isChecked);
+        // Actualiza el estado de isSelected para la fila seleccionada en el arreglo filteredOmniScripts.
+        this.filteredOmniScripts = this.filteredOmniScripts.map(script => {
+            if (script.Id === omniScriptId) {
+                script.isSelected = isChecked;
+            }
+            return script;
+        });
+
+        // Verifica si al menos una fila está seleccionada y si todas las seleccionadas tienen IsActive como true o false.
+        const allSelectedRows = this.filteredOmniScripts.filter(script => script.isSelected);
+        const allActive = allSelectedRows.every(script => script.IsActive);
+        const allInactive = allSelectedRows.every(script => !script.IsActive);
+
+        // Habilita o deshabilita los botones "Deactivate" y "Activate" según el estado de las filas seleccionadas.
+        this.isDeactivateButtonDisabled = !allActive || allSelectedRows.length === 0;
+        
+        this.isActivateButtonDisabled = !allInactive || allSelectedRows.length === 0;
+        //console.log(isActivateButtonDisabled);
+    }
+
+
+
+    handleDeactivateClick() {
+        this.showSpinner = true;
+        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
+        console.log('nelson tru label :'+selectedOmniScriptIds);
+        console.log('before update: '+JSON.stringify(this.filteredOmniScripts));
+        this.changeActiveStatus(selectedOmniScriptIds, false);
+        if (selectedOmniScriptIds.length > 0) {
+            deactivateOmniScript({ omniScriptIds: selectedOmniScriptIds })
+                .then(result => {
+                    this.showToast('Success', 'OmniScripts Deactivated successfully', 'success');
+                    refreshApex(this.wiredOmniscripts);
+                    // windows.location.reload();
+                    // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
+                    //this.loadData();
+                    console.log('after update: '+JSON.stringify(this.filteredOmniScripts));
+                    
+                    this.filterOmniScripts();
+                    
+                })
+                .catch(error => {
+                    console.error('Error deactivating OmniScripts: ', error);
+                    this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
+                    this.showSpinner = false;
+                });
+        } else {
+            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+            this.showToast('Error', 'No OmniScripts selected for deactivation', 'error');
+        }
+    }
+    changeActiveStatus(omnisId, newStatus){
+        for (let i = 0; i < this.filteredOmniScripts.length; i++) {
+            if (omnisId.includes(this.filteredOmniScripts[i].Id)) {
+                this.filteredOmniScripts[i].IsActive = newStatus;
+            }
+        }
+    }
+
+    handleActivateClick() {
+        this.showSpinner = true;
+        const selectedOmniScriptIds = this.getSelectedOmniScriptIds();
+        this.changeActiveStatus(selectedOmniScriptIds, true);
+        if (selectedOmniScriptIds.length > 0) {
+            console.log('before update: '+this.filteredOmniScripts);
+            activateOmniScript({ omniScriptIds: selectedOmniScriptIds })
+                .then(result => {
+                    this.showToast('Success', 'OmniScripts Activated successfully', 'success');
+                    refreshApex(this.wiredOmniscripts);
+                    console.log('after update: '+this.filteredOmniScripts);
+                    // windows.location.reload();
+                    // No necesitas llamar a refreshOmniScripts si usas @wire para obtener datos
+                    //this.loadData();
+                    
+                    this.filterOmniScripts();
+                    
+                })
+                .catch(error => {
+                    console.error('Error deactivating OmniScripts: ', error);
+                    this.showToast('Error', 'Failed to deactivate OmniScripts', 'error');
+                    this.showSpinner = false;
+                });
+        } else {
+            // Manejar caso donde no se seleccionaron OmniScripts para desactivar
+            this.showToast('Error', 'No OmniScripts selected for Activatation', 'error');
+        }
+    }
+
+    getSelectedOmniScriptIds() {
+        const selectedOmniScripts = this.filteredOmniScripts.filter(script => script.isSelected);
+        return selectedOmniScripts.map(script => script.Id);
+    }
+
+    showToast(title, message, variant) {
+        const toastEvent = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant
+        });
+        this.dispatchEvent(toastEvent);
+    }
 
 }
